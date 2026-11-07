@@ -179,3 +179,34 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--violet-bright);
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* ---------- MULTI-WINDOW MANAGER ---------- */
+.app-window {
+  position: absolute;
+  width: min(620px, calc(100% - 40px));
+  min-width: 300px;
+  overflow: hidden;
+  resize: both;
+}
+.app-window.is-maximized {
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  resize: none;
+}
+.window-titlebar { cursor: grab; user-select: none; touch-action: none; }
+.window-titlebar:active { cursor: grabbing; }
+.window-controls button { display: grid; place-items: center; padding: 0; font-size: 13px; line-height: 1; }
+.window-controls .control-minimize { border-color: rgba(224,190,112,.55); background: rgba(177,133,59,.2); color: #e9d19c; }
+.window-controls .control-maximize { border-color: rgba(145,190,157,.55); background: rgba(87,145,104,.2); color: #b8e0c2; }
+.taskbar-windows { display: flex; align-items: center; gap: 5px; max-width: min(44vw, 520px); overflow-x: auto; scrollbar-width: none; }
+.taskbar-windows::-webkit-scrollbar { display: none; }
+.taskbar-window { display: flex; align-items: center; gap: 7px; max-width: 145px; height: 34px; padding: 0 10px; overflow: hidden; border: 1px solid rgba(180,152,234,.25); background: rgba(151,118,206,.13); color: #d8cbed; font-size: 9px; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+.taskbar-window span { color: #c5b0f0; font-size: 15px; }
+.taskbar-window.minimized { border-color: transparent; background: rgba(255,255,255,.025); color: #898294; }
+.taskbar-window:hover { border-color: rgba(187,160,238,.5); color: #f0e9ff; }
+@media (max-width: 760px) {
+  .app-window, .app-window.is-maximized { position: fixed; inset: 64px 12px 82px !important; width: auto !important; min-width: 0; max-height: none; resize: none; }
+  .window-titlebar { cursor: default; }
+}

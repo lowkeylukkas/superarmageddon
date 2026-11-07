@@ -1,14 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 
 type AppId = 'about' | 'achievements' | 'bible' | 'vibe' | 'music' | 'kpop' | 'games' | 'socials' | 'extras';
-
-type DesktopApp = {
-  id: AppId;
-  name: string;
-  icon: string;
-  category: string;
-  description: string;
-};
+type DesktopApp = { id: AppId; name: string; icon: string; category: string; description: string };
+type AppWindow = { id: AppId; x: number; y: number; z: number; minimized: boolean; maximized: boolean };
+type DragState = { id: AppId; pointerX: number; pointerY: number; originX: number; originY: number };
 
 const apps: DesktopApp[] = [
   { id: 'about', name: 'About me', icon: '◈', category: 'PROFILE', description: 'A little window into the person behind this digital universe.' },
@@ -21,32 +17,70 @@ const apps: DesktopApp[] = [
   { id: 'socials', name: 'Social links', icon: '↗', category: 'CONNECTIONS', description: 'Find the places where I exist around the internet.' },
   { id: 'extras', name: 'Little surprises', icon: '⁕', category: 'EXTRAS', description: 'Compliments, secrets, and other unexpected things.' },
 ];
-
-const initialTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-const initialDate = () => new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+const timeNow = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const dateNow = () => new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 
 function App() {
-  const [activeApp, setActiveApp] = useState<AppId | null>(null);
+  const [windows, setWindows] = useState<AppWindow[]>([]);
   const [launcherOpen, setLauncherOpen] = useState(false);
-  const [clock, setClock] = useState(initialTime);
-  const [date, setDate] = useState(initialDate());
+  const [clock, setClock] = useState(timeNow);
+  const [date, setDate] = useState(dateNow);
   const [mobileTab, setMobileTab] = useState<'home' | 'apps'>('home');
+  const topZ = useRef(1);
+  const drag = useRef<DragState | null>(null);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setClock(initialTime());
-      setDate(initialDate());
-    }, 30_000);
+    const timer = window.setInterval(() => { setClock(timeNow()); setDate(dateNow()); }, 30_000);
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const move = (event: PointerEvent) => {
+      const current = drag.current;
+      if (!current) return;
+      const dx = event.clientX - current.pointerX;
+      const dy = event.clientY - current.pointerY;
+      setWindows(items => items.map(item => item.id === current.id && !item.maximized
+        ? { ...item, x: Math.max(8, Math.min(window.innerWidth - 260, current.originX + dx)), y: Math.max(62, Math.min(window.innerHeight - 150, current.originY + dy)) }
+        : item));
+    };
+    const stop = () => { drag.current = null; };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+    };
+  }, []);
+
+  const focusWindow = (id: AppId) => {
+    topZ.current += 1;
+    setWindows(items => items.map(item => item.id === id ? { ...item, minimized: false, z: topZ.current } : item));
+  };
   const openApp = (id: AppId) => {
-    setActiveApp(id);
+    const existing = windows.find(item => item.id === id);
+    if (existing) focusWindow(id);
+    else {
+      topZ.current += 1;
+      const offset = (windows.length % 5) * 34;
+      setWindows(items => [...items, { id, x: Math.max(28, (window.innerWidth - 620) / 2 + offset), y: Math.max(78, (window.innerHeight - 390) / 2 + offset), z: topZ.current, minimized: false, maximized: false }]);
+    }
     setLauncherOpen(false);
     setMobileTab('home');
   };
-
-  const selectedApp = apps.find((app) => app.id === activeApp);
+  const closeWindow = (id: AppId) => setWindows(items => items.filter(item => item.id !== id));
+  const minimizeWindow = (id: AppId) => setWindows(items => items.map(item => item.id === id ? { ...item, minimized: true } : item));
+  const toggleMaximize = (id: AppId) => {
+    topZ.current += 1;
+    setWindows(items => items.map(item => item.id === id ? { ...item, maximized: !item.maximized, z: topZ.current } : item));
+  };
+  const startDrag = (event: ReactPointerEvent, item: AppWindow) => {
+    if (event.button !== 0 || item.maximized || window.matchMedia('(max-width: 760px)').matches) return;
+    drag.current = { id: item.id, pointerX: event.clientX, pointerY: event.clientY, originX: item.x, originY: item.y };
+    focusWindow(item.id);
+  };
 
   return (
     <main className="os-shell">
@@ -54,32 +88,22 @@ function App() {
       <div className="ambient ambient-one" aria-hidden="true" />
       <div className="ambient ambient-two" aria-hidden="true" />
       <div className="scanline" aria-hidden="true" />
-
       <header className="topbar">
-        <a className="wordmark" href="#" aria-label="Superarmageddon home" onClick={(event) => { event.preventDefault(); setActiveApp(null); }}>
-          <span className="wordmark-mark">S</span>
-          <span>SUPER<span className="wordmark-light">ARMAGEDDON</span></span>
+        <a className="wordmark" href="#" aria-label="Superarmageddon home" onClick={event => { event.preventDefault(); setWindows([]); setLauncherOpen(false); }}>
+          <span className="wordmark-mark">S</span><span>SUPER<span className="wordmark-light">ARMAGEDDON</span></span>
         </a>
-        <div className="topbar-center"><span className="status-dot" /> PERSONAL OPERATING ENVIRONMENT <span className="topbar-version">BUILD 0.1.0</span></div>
+        <div className="topbar-center"><span className="status-dot" /> PERSONAL OPERATING ENVIRONMENT <span className="topbar-version">BUILD 0.2.0</span></div>
         <div className="topbar-right"><span className="connection"><i /> SYSTEM ONLINE</span><span className="topbar-clock">{clock}</span></div>
       </header>
 
       <section className="desktop">
         <div className="desktop-heading">
-          <p className="eyebrow">WELCOME TO YOUR SPACE</p>
-          <h1>A world of <em>your own.</em></h1>
+          <p className="eyebrow">WELCOME TO YOUR SPACE</p><h1>A world of <em>your own.</em></h1>
           <p className="desktop-subtitle">Personal files. Favorite things. A few secrets in the system.</p>
         </div>
-
         <div className="desktop-icons" aria-label="Desktop applications">
-          {apps.map((app) => (
-            <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)}>
-              <span className="desktop-icon-art">{app.icon}</span>
-              <span>{app.name}</span>
-            </button>
-          ))}
+          {apps.map(app => <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)}><span className="desktop-icon-art">{app.icon}</span><span>{app.name}</span></button>)}
         </div>
-
         <aside className="profile-widget">
           <div className="widget-topline"><span>USER PROFILE</span><span className="widget-live">● LIVE</span></div>
           <div className="profile-main">
@@ -87,61 +111,60 @@ function App() {
             <div><p className="profile-label">CURRENT USER</p><h2>Lukkas</h2><p className="profile-status">Exploring the unknown.</p></div>
           </div>
           <div className="widget-divider" />
-          <div className="widget-footer"><span>SESSION STATUS</span><strong><i /> ACTIVE</strong></div>
+          <div className="widget-footer"><span>OPEN WINDOWS</span><strong>{windows.filter(item => !item.minimized).length} ACTIVE</strong></div>
         </aside>
+        <div className="desktop-note"><span className="note-symbol">✳</span><div><strong>WINDOW MANAGER ONLINE</strong><p>Open multiple applications. Move, minimize, and arrange them.</p></div></div>
 
-        <div className="desktop-note">
-          <span className="note-symbol">✳</span>
-          <div><strong>THIS SPACE IS STILL EVOLVING</strong><p>More applications and hidden details are on the way.</p></div>
-        </div>
-
-        {activeApp && selectedApp && (
-          <div className="window-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setActiveApp(null); }}>
-            <section className="app-window" role="dialog" aria-modal="true" aria-labelledby="window-title">
-              <div className="window-titlebar">
-                <div className="window-controls"><button aria-label="Close window" onClick={() => setActiveApp(null)}>×</button><span /><span /></div>
-                <span className="window-app-name">{selectedApp.name.toUpperCase()}</span>
-                <span className="window-index">SYS / {String(apps.findIndex((app) => app.id === activeApp) + 1).padStart(2, '0')}</span>
+        {windows.filter(item => !item.minimized).map(item => {
+          const app = apps.find(entry => entry.id === item.id);
+          if (!app) return null;
+          return (
+            <section key={item.id} className={`app-window ${item.maximized ? 'is-maximized' : ''}`} role="dialog" aria-labelledby={`window-title-${item.id}`} onPointerDown={() => focusWindow(item.id)} style={item.maximized ? { zIndex: item.z } : { left: item.x, top: item.y, zIndex: item.z }}>
+              <div className="window-titlebar" onPointerDown={event => startDrag(event, item)} onDoubleClick={() => toggleMaximize(item.id)}>
+                <div className="window-controls">
+                  <button className="control-close" aria-label={`Close ${app.name}`} onPointerDown={event => event.stopPropagation()} onClick={() => closeWindow(item.id)}>×</button>
+                  <button className="control-minimize" aria-label={`Minimize ${app.name}`} onPointerDown={event => event.stopPropagation()} onClick={() => minimizeWindow(item.id)}>−</button>
+                  <button className="control-maximize" aria-label={`Maximize ${app.name}`} onPointerDown={event => event.stopPropagation()} onClick={() => toggleMaximize(item.id)}>+</button>
+                </div>
+                <span className="window-app-name">{app.name.toUpperCase()}</span><span className="window-index">SYS / {String(apps.findIndex(entry => entry.id === item.id) + 1).padStart(2, '0')}</span>
               </div>
               <div className="window-content">
-                <p className="eyebrow">{selectedApp.category} / APPLICATION</p>
-                <div className="window-heading-row"><span className="window-large-icon">{selectedApp.icon}</span><div><h2 id="window-title">{selectedApp.name}</h2><p>{selectedApp.description}</p></div></div>
+                <p className="eyebrow">{app.category} / APPLICATION</p>
+                <div className="window-heading-row"><span className="window-large-icon">{app.icon}</span><div><h2 id={`window-title-${item.id}`}>{app.name}</h2><p>{app.description}</p></div></div>
                 <div className="coming-soon"><span className="coming-line" /><span>APPLICATION MODULE IN DEVELOPMENT</span><span className="coming-line" /></div>
                 <p className="window-footnote">The original feature is on the preservation list. This space will be filled in as we build the system, one module at a time.</p>
               </div>
               <div className="window-status"><span>SUPERARMAGEDDON / USER SPACE</span><span>● READY</span></div>
             </section>
-          </div>
-        )}
+          );
+        })}
       </section>
 
-      {launcherOpen && (
-        <div className="launcher-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setLauncherOpen(false); }}>
-          <section className="launcher-panel" aria-label="Application launcher">
-            <div className="launcher-header"><div><p className="eyebrow">SYSTEM DIRECTORY</p><h2>Applications</h2></div><button className="launcher-close" onClick={() => setLauncherOpen(false)} aria-label="Close launcher">×</button></div>
-            <div className="launcher-grid">{apps.map((app) => <button key={app.id} className="launcher-app" onClick={() => openApp(app.id)}><span>{app.icon}</span><strong>{app.name}</strong><small>{app.category}</small></button>)}</div>
-            <div className="launcher-bottom"><span>9 APPLICATIONS</span><span>MORE MODULES INCOMING</span></div>
-          </section>
-        </div>
-      )}
+      {launcherOpen && <div className="launcher-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setLauncherOpen(false); }}>
+        <section className="launcher-panel" aria-label="Application launcher">
+          <div className="launcher-header"><div><p className="eyebrow">SYSTEM DIRECTORY</p><h2>Applications</h2></div><button className="launcher-close" onClick={() => setLauncherOpen(false)} aria-label="Close launcher">×</button></div>
+          <div className="launcher-grid">{apps.map(app => <button key={app.id} className="launcher-app" onClick={() => openApp(app.id)}><span>{app.icon}</span><strong>{app.name}</strong><small>{app.category}</small></button>)}</div>
+          <div className="launcher-bottom"><span>9 APPLICATIONS</span><span>MORE MODULES INCOMING</span></div>
+        </section>
+      </div>}
 
       <footer className="taskbar">
-        <button className={`launcher-button ${launcherOpen ? 'is-open' : ''}`} onClick={() => setLauncherOpen((open) => !open)} aria-label="Open application launcher" aria-expanded={launcherOpen}>
-          <span className="launcher-glyph">S</span><span className="launcher-word">SYSTEM</span>
-        </button>
+        <button className={`launcher-button ${launcherOpen ? 'is-open' : ''}`} onClick={() => setLauncherOpen(open => !open)} aria-label="Open application launcher" aria-expanded={launcherOpen}><span className="launcher-glyph">S</span><span className="launcher-word">SYSTEM</span></button>
         <div className="taskbar-divider" />
-        <div className="taskbar-pins">{apps.slice(0, 5).map((app) => <button key={app.id} className={`taskbar-pin ${activeApp === app.id ? 'active' : ''}`} onClick={() => openApp(app.id)} title={app.name}>{app.icon}</button>)}</div>
+        <div className="taskbar-pins">{apps.slice(0, 5).map(app => <button key={app.id} className="taskbar-pin" onClick={() => openApp(app.id)} title={app.name}>{app.icon}</button>)}</div>
         <div className="taskbar-spacer" />
+        <div className="taskbar-windows">{windows.map(item => {
+          const app = apps.find(entry => entry.id === item.id);
+          return app ? <button key={item.id} className={`taskbar-window ${item.minimized ? 'minimized' : 'running'}`} onClick={() => focusWindow(item.id)} title={app.name}><span>{app.icon}</span>{app.name}</button> : null;
+        })}</div>
         <div className="taskbar-tray"><span className="tray-signal">◈</span><span className="tray-date">{date}</span><strong>{clock}</strong></div>
       </footer>
-
       <nav className="mobile-nav" aria-label="Mobile navigation">
-        <button className={mobileTab === 'home' ? 'active' : ''} onClick={() => { setMobileTab('home'); setLauncherOpen(false); setActiveApp(null); }}><span>⌂</span>HOME</button>
+        <button className={mobileTab === 'home' ? 'active' : ''} onClick={() => { setMobileTab('home'); setLauncherOpen(false); setWindows([]); }}><span>⌂</span>HOME</button>
         <button className={mobileTab === 'apps' || launcherOpen ? 'active' : ''} onClick={() => { setMobileTab('apps'); setLauncherOpen(true); }}><span>▦</span>APPS</button>
         <div className="mobile-nav-clock">{clock}</div>
       </nav>
     </main>
   );
 }
-
 export default App;

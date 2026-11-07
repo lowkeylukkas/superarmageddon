@@ -10,7 +10,7 @@ The visual direction takes inspiration from the dark, futuristic atmosphere of a
 
 🚧 **In development — OS foundation scaffolded**
 
-The new React + TypeScript + Vite foundation is on the `feat/os-foundation` branch. The previous website remains in the separate [`lukkas`](https://github.com/lowkeylukkas/lukkas) repository and is not modified.
+The initial React + TypeScript + Vite foundation has been merged into `main`. The multi-window manager is being developed on the `feat/window-manager` branch. The previous website remains in the separate [`lukkas`](https://github.com/lowkeylukkas/lukkas) repository and is not modified.
 
 The current build is an early interface shell. The feature modules listed below are planned goals; they are not all implemented yet.
 
@@ -76,7 +76,7 @@ npm run preview
 - [x] Set up the React + TypeScript + Vite foundation.
 - [x] Establish the first design tokens and visual direction.
 - [x] Build the first responsive desktop and mobile shells.
-- [ ] Implement the app/window manager and launcher interactions.
+- [x] Implement multiple application windows, focus, dragging, minimizing, maximizing, and taskbar restore.
 - [ ] Recreate the original site's features and interactions.
 - [ ] Add startup, login, settings, and accessibility options.
 - [ ] Test across desktop and mobile browsers.
