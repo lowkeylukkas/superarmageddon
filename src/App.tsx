@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 
 type AppId = 'about' | 'achievements' | 'bible' | 'vibe' | 'music' | 'kpop' | 'games' | 'socials' | 'extras';
 
@@ -29,7 +30,7 @@ function App() {
   const [activeApp, setActiveApp] = useState<AppId | null>(null);
   const [launcherOpen, setLauncherOpen] = useState(false);
   const [clock, setClock] = useState(initialTime);
-  const [date, setDate] = useState(initialDate);
+  const [date, setDate] = useState(initialDate());
   const [mobileTab, setMobileTab] = useState<'home' | 'apps'>('home');
 
   useEffect(() => {
@@ -73,7 +74,7 @@ function App() {
 
         <div className="desktop-icons" aria-label="Desktop applications">
           {apps.map((app, index) => (
-            <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)} style={{ '--icon-index': index } as React.CSSProperties}>
+            <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)} style={{ '--icon-index': index } as CSSProperties}>
               <span className="desktop-icon-art">{app.icon}</span>
               <span>{app.name}</span>
             </button>

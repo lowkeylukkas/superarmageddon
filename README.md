@@ -8,17 +8,17 @@ The visual direction takes inspiration from the dark, futuristic atmosphere of a
 
 ## Project status
 
-🚧 **In development — concept and foundations**
+🚧 **In development — OS foundation scaffolded**
 
-This repository is the new home for the OS-style version of Lukkas' personal website. The previous website remains in the separate [`lukkas`](https://github.com/lowkeylukkas/lukkas) repository while this project is developed.
+The new React + TypeScript + Vite foundation is on the `feat/os-foundation` branch. The previous website remains in the separate [`lukkas`](https://github.com/lowkeylukkas/lukkas) repository and is not modified.
 
-Features listed below are planned goals; they are not all implemented yet.
+The current build is an early interface shell. The feature modules listed below are planned goals; they are not all implemented yet.
 
 ## Experience
 
 The goal is to create one experience that adapts to desktop and mobile:
 
-- **Desktop:** a full interactive environment with a desktop, app launcher, taskbar, widgets, and movable application windows.
+- **Desktop:** a full interactive environment with a desktop, app launcher, taskbar, widgets, and application windows.
 - **Mobile:** a touch-friendly app launcher, full-screen app views, and mobile navigation rather than a shrunken desktop layout.
 - **Startup:** an optional cinematic boot sequence and interactive login, with a way to skip directly to the desktop.
 - **Atmosphere:** animated wallpaper, subtle effects, and reduced-motion support.
@@ -48,32 +48,39 @@ The original site's personality and interactive features are important to this p
 - No Frutiger Aero or bubbly glassmorphism direction.
 - Inspired by a visual mood, not affiliated with or endorsed by aespa or its label.
 
-## Planned technology
+## Technology
 
-The intended foundation is:
+- React + TypeScript
+- Vite
+- CSS design system and responsive layouts
+- Browser storage for local preferences and achievement progress (planned)
 
-- [React](https://react.dev/) for the interface and application components.
-- [TypeScript](https://www.typescriptlang.org/) for type-safe code.
-- [Vite](https://vite.dev/) for development and production builds.
-- CSS for the visual system, responsive layouts, and motion.
-- Browser storage for local preferences and achievement progress.
+## Run locally
 
-The exact implementation may evolve as the project takes shape.
+Requires Node.js 20.19+ or 22.12+.
+
+```bash
+npm install
+npm run dev
+```
+
+Create a production build with:
+
+```bash
+npm run build
+npm run preview
+```
 
 ## Development roadmap
 
-- [ ] Set up the React + TypeScript + Vite project.
-- [ ] Establish design tokens, typography, icons, and wallpaper treatment.
-- [ ] Build the responsive desktop and mobile shells.
-- [ ] Implement the app/window manager and launcher.
+- [x] Set up the React + TypeScript + Vite foundation.
+- [x] Establish the first design tokens and visual direction.
+- [x] Build the first responsive desktop and mobile shells.
+- [ ] Implement the app/window manager and launcher interactions.
 - [ ] Recreate the original site's features and interactions.
 - [ ] Add startup, login, settings, and accessibility options.
 - [ ] Test across desktop and mobile browsers.
 - [ ] Configure deployment.
-
-## Running locally
-
-Once the application scaffold is in place, local development instructions will be added here.
 
 ## Credits and media
 
