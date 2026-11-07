@@ -26,7 +26,7 @@ function App() {
   const [clock, setClock] = useState(timeNow);
   const [date, setDate] = useState(dateNow);
   const [mobileTab, setMobileTab] = useState<'home' | 'apps'>('home');
-  const topZ = useRef(1);
+  const topZ = useRef(10);
   const drag = useRef<DragState | null>(null);
 
   useEffect(() => {
@@ -160,7 +160,7 @@ function App() {
         <div className="taskbar-tray"><span className="tray-signal">◈</span><span className="tray-date">{date}</span><strong>{clock}</strong></div>
       </footer>
       <nav className="mobile-nav" aria-label="Mobile navigation">
-        <button className={mobileTab === 'home' ? 'active' : ''} onClick={() => { setMobileTab('home'); setLauncherOpen(false); setWindows([]); }}><span>⌂</span>HOME</button>
+        <button className={mobileTab === 'home' ? 'active' : ''} onClick={() => { setMobileTab('home'); setLauncherOpen(false); setWindows(items => items.map(item => ({ ...item, minimized: true }))); }}><span>⌂</span>HOME</button>
         <button className={mobileTab === 'apps' || launcherOpen ? 'active' : ''} onClick={() => { setMobileTab('apps'); setLauncherOpen(true); }}><span>▦</span>APPS</button>
         <div className="mobile-nav-clock">{clock}</div>
       </nav>
