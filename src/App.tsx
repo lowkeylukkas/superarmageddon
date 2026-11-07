@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import type { CSSProperties } from 'react';
 
 type AppId = 'about' | 'achievements' | 'bible' | 'vibe' | 'music' | 'kpop' | 'games' | 'socials' | 'extras';
 
@@ -73,8 +72,8 @@ function App() {
         </div>
 
         <div className="desktop-icons" aria-label="Desktop applications">
-          {apps.map((app, index) => (
-            <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)} style={{ '--icon-index': index } as CSSProperties}>
+          {apps.map((app) => (
+            <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)}>
               <span className="desktop-icon-art">{app.icon}</span>
               <span>{app.name}</span>
             </button>
