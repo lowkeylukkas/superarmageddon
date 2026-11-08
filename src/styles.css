@@ -293,3 +293,5 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--violet-bright);
   .achievement-card { min-height: 55px; }
   .achievement-heading h2 { font-size: 21px; }
 }
+
+.avatar-tap-progress { margin: 6px 0 0; color: #827591; font: 7px 'DM Mono', monospace; letter-spacing: .75px; }

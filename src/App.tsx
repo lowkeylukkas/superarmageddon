@@ -266,7 +266,7 @@ function App() {
             <button className={`avatar-frame avatar-interactive ${isRainbow ? 'rainbow-charge' : ''}`} onClick={handleAvatarClick} onPointerDown={beginAvatarHold} onPointerUp={endAvatarHold} onPointerCancel={endAvatarHold} onPointerLeave={endAvatarHold} aria-label="Phainon profile picture — tap seven times or press and hold for a secret">
               <img src="https://media1.tenor.com/m/ik5IecAlaS4AAAAC/phainon-phainon-hsr.gif" alt="Phainon animated profile" draggable={false} />
             </button>
-            <div><p className="profile-label">CURRENT USER</p><h2>Lukkas</h2><p className="profile-status">Exploring the unknown.</p></div>
+            <div><p className="profile-label">CURRENT USER</p><h2>Lukkas</h2><p className="profile-status">Exploring the unknown.</p><p className="avatar-tap-progress">{unlocked.has('avatar-tapper') ? 'AVATAR SIGNAL / DECODED' : 'AVATAR SIGNAL / ' + Math.min(avatarClicks, 7) + ' OF 7'}</p></div>
           </div>
           <div className="widget-divider" />
           <div className="widget-footer"><span>SECRETS FOUND</span><strong>{unlockedCount} / {achievements.length}</strong></div>
