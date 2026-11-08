@@ -71,13 +71,18 @@ npm run build
 npm run preview
 ```
 
+## Achievement system
+
+The eight original secret IDs and trigger conditions are preserved. Achievement progress uses the existing `lukkas_ach_*` local-storage keys so unlocked secrets can carry over from the original site in the same browser. New unlocks are saved locally; no account or server sync is included yet.
+
 ## Development roadmap
 
 - [x] Set up the React + TypeScript + Vite foundation.
 - [x] Establish the first design tokens and visual direction.
 - [x] Build the first responsive desktop and mobile shells.
 - [x] Implement multiple application windows, focus, dragging, minimizing, maximizing, and taskbar restore.
-- [ ] Recreate the original site's features and interactions.
+- [x] Add the eight original achievements, clickable locked/unlocked entries, unlock notifications, and local progress persistence.
+- [ ] Recreate the remaining original site's features and interactions.
 - [ ] Add startup, login, settings, and accessibility options.
 - [ ] Test across desktop and mobile browsers.
 - [ ] Configure deployment.
