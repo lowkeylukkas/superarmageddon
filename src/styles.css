@@ -295,3 +295,27 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--violet-bright);
 }
 
 .avatar-tap-progress { margin: 6px 0 0; color: #827591; font: 7px 'DM Mono', monospace; letter-spacing: .75px; }
+
+
+/* ---------- RESPONSIVE WINDOW SAFEGUARDS ---------- */
+.app-window {
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 24px);
+}
+.app-window > .window-titlebar,
+.app-window > .window-status {
+  flex: 0 0 auto;
+}
+.app-window > .window-content {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+@media (max-width: 760px) {
+  .app-window,
+  .app-window.is-maximized {
+    max-width: none;
+    max-height: none;
+  }
+}
