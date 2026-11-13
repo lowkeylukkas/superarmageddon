@@ -5,7 +5,7 @@ type AppId = 'about' | 'achievements' | 'bible' | 'vibe' | 'music' | 'kpop' | 'g
 type AchievementId = 'avatar-tapper' | 'vibe-roller' | 'konami' | 'compliment-collector' | 'reaction-giver' | 'rainbow-finder' | 'games-explorer' | 'verse-reader';
 type DesktopApp = { id: AppId; name: string; icon: string; category: string; description: string };
 type AppWindow = { id: AppId; x: number; y: number; z: number; minimized: boolean; maximized: boolean };
-type DragState = { id: AppId; pointerX: number; pointerY: number; originX: number; originY: number };
+type DragState = { id: AppId; pointerX: number; pointerY: number; originX: number; originY: number; maxX: number; maxY: number };
 type Achievement = { id: AchievementId; title: string; description: string; hint: string; icon: string; category: string };
 
 const apps: DesktopApp[] = [
@@ -85,6 +85,7 @@ function App() {
   const [reaction, setReaction] = useState('');
   const [currentVerse, setCurrentVerse] = useState<{ ref: string; text: string } | null>(null);
   const topZ = useRef(10);
+  const desktopRef = useRef<HTMLElement | null>(null);
   const drag = useRef<DragState | null>(null);
   const unlockedRef = useRef(unlocked);
   const longPressTimer = useRef<number | null>(null);
@@ -124,7 +125,7 @@ function App() {
       const dx = event.clientX - current.pointerX;
       const dy = event.clientY - current.pointerY;
       setWindows((items) => items.map((item) => item.id === current.id && !item.maximized
-        ? { ...item, x: Math.max(8, Math.min(window.innerWidth - 260, current.originX + dx)), y: Math.max(62, Math.min(window.innerHeight - 150, current.originY + dy)) }
+        ? { ...item, x: Math.max(8, Math.min(current.maxX, current.originX + dx)), y: Math.max(8, Math.min(current.maxY, current.originY + dy)) }
         : item));
     };
     const stop = () => { drag.current = null; };
@@ -136,6 +137,37 @@ function App() {
       window.removeEventListener('pointerup', stop);
       window.removeEventListener('pointercancel', stop);
     };
+  }, []);
+
+  useEffect(() => {
+    const keepWindowsVisible = () => {
+      const desktop = desktopRef.current;
+      if (!desktop) return;
+      const bounds = desktop.getBoundingClientRect();
+
+      setWindows((items) => items.map((item) => {
+        if (item.maximized) return item;
+        const element = desktop.querySelector<HTMLElement>(`[data-window-id="${item.id}"]`);
+        const width = element?.offsetWidth ?? 620;
+        const height = element?.offsetHeight ?? 320;
+        return {
+          ...item,
+          x: Math.max(8, Math.min(Math.max(8, bounds.width - width - 8), item.x)),
+          y: Math.max(8, Math.min(Math.max(8, bounds.height - height - 8), item.y)),
+        };
+      }));
+    };
+
+    window.addEventListener('resize', keepWindowsVisible);
+    return () => window.removeEventListener('resize', keepWindowsVisible);
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLauncherOpen(false);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 
   useEffect(() => {
@@ -163,20 +195,41 @@ function App() {
   };
   const openApp = (id: AppId) => {
     if (id === 'games') grantAchievement('games-explorer');
+
+    const isMobile = window.matchMedia('(max-width: 760px)').matches;
+    const desktopBounds = desktopRef.current?.getBoundingClientRect();
+    const desktopWidth = desktopBounds?.width ?? window.innerWidth;
+    const desktopHeight = desktopBounds?.height ?? Math.max(300, window.innerHeight - 116);
+    const appWidth = Math.min(620, Math.max(280, desktopWidth - 24));
+    const estimatedHeight = id === 'achievements' ? 540 : id === 'extras' ? 360 : id === 'bible' ? 340 : id === 'vibe' ? 300 : 320;
+    const visibleWindows = windows.filter((item) => !item.minimized).length;
+    const offset = isMobile ? 0 : (visibleWindows % 5) * 30;
+    const x = Math.max(8, Math.min(Math.max(8, desktopWidth - appWidth - 8), (desktopWidth - appWidth) / 2 + offset));
+    const y = Math.max(8, Math.min(Math.max(8, desktopHeight - estimatedHeight - 8), (desktopHeight - estimatedHeight) / 2 + offset));
+
     const existing = windows.find((item) => item.id === id);
-    if (existing) focusWindow(id);
-    else {
-      topZ.current += 1;
-      const offset = (windows.length % 5) * 34;
-      setWindows((items) => [...items, {
-        id,
-        x: Math.max(28, (window.innerWidth - 620) / 2 + offset),
-        y: Math.max(78, (window.innerHeight - 390) / 2 + offset),
-        z: topZ.current,
-        minimized: false,
-        maximized: false,
-      }]);
+    topZ.current += 1;
+
+    if (existing) {
+      setWindows((items) => items.map((item) => ({
+        ...item,
+        minimized: item.id === id ? false : (isMobile ? true : item.minimized),
+        z: item.id === id ? topZ.current : item.z,
+      })));
+    } else {
+      setWindows((items) => [
+        ...items.map((item) => isMobile ? { ...item, minimized: true } : item),
+        {
+          id,
+          x,
+          y,
+          z: topZ.current,
+          minimized: false,
+          maximized: false,
+        },
+      ]);
     }
+
     setLauncherOpen(false);
     setMobileTab('home');
   };
@@ -188,8 +241,20 @@ function App() {
   };
   const startDrag = (event: ReactPointerEvent, item: AppWindow) => {
     if (event.button !== 0 || item.maximized || window.matchMedia('(max-width: 760px)').matches) return;
-    drag.current = { id: item.id, pointerX: event.clientX, pointerY: event.clientY, originX: item.x, originY: item.y };
-    focusWindow(item.id);
+
+    const desktopBounds = desktopRef.current?.getBoundingClientRect();
+    const windowElement = event.currentTarget.closest<HTMLElement>('.app-window');
+    if (!desktopBounds || !windowElement) return;
+
+    drag.current = {
+      id: item.id,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      originX: item.x,
+      originY: item.y,
+      maxX: Math.max(8, desktopBounds.width - windowElement.offsetWidth - 8),
+      maxY: Math.max(8, desktopBounds.height - windowElement.offsetHeight - 8),
+    };
   };
 
   const beginAvatarHold = () => {
@@ -254,7 +319,7 @@ function App() {
         <div className="topbar-right"><span className="connection"><i /> SYSTEM ONLINE</span><span className="topbar-clock">{clock}</span></div>
       </header>
 
-      <section className="desktop">
+      <section className="desktop" ref={desktopRef}>
         <div className="desktop-heading"><p className="eyebrow">WELCOME TO YOUR SPACE</p><h1>A world of <em>your own.</em></h1><p className="desktop-subtitle">Personal files. Favorite things. A few secrets in the system.</p></div>
         <div className="desktop-icons" aria-label="Desktop applications">
           {apps.map((app) => <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)}><span className="desktop-icon-art">{app.icon}</span><span>{app.name}</span></button>)}
@@ -278,7 +343,7 @@ function App() {
           const app = apps.find((entry) => entry.id === item.id);
           if (!app) return null;
           return (
-            <section key={item.id} className={`app-window ${item.maximized ? 'is-maximized' : ''}`} role="dialog" aria-labelledby={`window-title-${item.id}`} onPointerDown={() => focusWindow(item.id)} style={item.maximized ? { zIndex: item.z } : { left: item.x, top: item.y, zIndex: item.z }}>
+            <section key={item.id} className={`app-window ${item.maximized ? 'is-maximized' : ''}`} data-window-id={item.id} role="dialog" aria-labelledby={`window-title-${item.id}`} onPointerDown={() => focusWindow(item.id)} style={item.maximized ? { zIndex: item.z } : { left: item.x, top: item.y, zIndex: item.z }}>
               <div className="window-titlebar" onPointerDown={(event) => startDrag(event, item)} onDoubleClick={() => toggleMaximize(item.id)}>
                 <div className="window-controls">
                   <button className="control-close" aria-label={`Close ${app.name}`} onPointerDown={(event) => event.stopPropagation()} onClick={() => closeWindow(item.id)}>×</button>
