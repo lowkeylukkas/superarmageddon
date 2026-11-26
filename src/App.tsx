@@ -9,15 +9,15 @@ type DragState = { id: AppId; pointerX: number; pointerY: number; originX: numbe
 type Achievement = { id: AchievementId; title: string; description: string; hint: string; icon: string; category: string };
 
 const apps: DesktopApp[] = [
-  { id: 'about', name: 'About me', icon: '◈', category: 'PROFILE', description: 'A little window into the person behind this digital universe.' },
-  { id: 'achievements', name: 'Achievements', icon: '✧', category: 'SYSTEM', description: 'Discover milestones, hidden unlocks, and progress.' },
-  { id: 'bible', name: 'Daily verse', icon: '⌁', category: 'REFLECTIONS', description: 'A quiet corner for scripture and encouragement.' },
-  { id: 'vibe', name: 'Roll my vibe', icon: '⟡', category: 'RANDOMIZER', description: 'Let the system decide the vibe for today.' },
-  { id: 'music', name: 'Music player', icon: '♫', category: 'AUDIO', description: 'A home for favorite tracks and sounds.' },
-  { id: 'kpop', name: 'K-pop archive', icon: '✳', category: 'COLLECTION', description: 'Groups, artists, and eras worth keeping close.' },
-  { id: 'games', name: 'Games & characters', icon: '⌘', category: 'COLLECTION', description: 'Favorite worlds, games, and characters.' },
-  { id: 'socials', name: 'Social links', icon: '↗', category: 'CONNECTIONS', description: 'Find the places where I exist around the internet.' },
-  { id: 'extras', name: 'Little surprises', icon: '⁕', category: 'EXTRAS', description: 'Compliments, secrets, and other unexpected things.' },
+  { id: 'about', name: 'About me', icon: 'about-me.svg', category: 'PROFILE', description: 'A little window into the person behind this digital universe.' },
+  { id: 'achievements', name: 'Achievements', icon: 'achievements.svg', category: 'SYSTEM', description: 'Discover milestones, hidden unlocks, and progress.' },
+  { id: 'bible', name: 'Daily verse', icon: 'bible.svg', category: 'REFLECTIONS', description: 'A quiet corner for scripture and encouragement.' },
+  { id: 'vibe', name: 'Roll my vibe', icon: 'roll-my-vibe.svg', category: 'RANDOMIZER', description: 'Let the system decide the vibe for today.' },
+  { id: 'music', name: 'Music player', icon: 'music.svg', category: 'AUDIO', description: 'A home for favorite tracks and sounds.' },
+  { id: 'kpop', name: 'K-pop archive', icon: 'kpop.svg', category: 'COLLECTION', description: 'Groups, artists, and eras worth keeping close.' },
+  { id: 'games', name: 'Games & characters', icon: 'games.svg', category: 'COLLECTION', description: 'Favorite worlds, games, and characters.' },
+  { id: 'socials', name: 'Social links', icon: 'socials.svg', category: 'CONNECTIONS', description: 'Find the places where I exist around the internet.' },
+  { id: 'extras', name: 'Little surprises', icon: 'extras.svg', category: 'EXTRAS', description: 'Compliments, secrets, and other unexpected things.' },
 ];
 
 const achievements: Achievement[] = [
@@ -313,7 +313,7 @@ function App() {
 
       <header className="topbar">
         <a className="wordmark" href="#" aria-label="Superarmageddon home" onClick={(event) => { event.preventDefault(); setWindows([]); setLauncherOpen(false); }}>
-          <span className="wordmark-mark">S</span><span>SUPER<span className="wordmark-light">ARMAGEDDON</span></span>
+          <img className="wordmark-mark-image" src="./assets/superarmageddon-mark.svg" alt="" /><span>SUPER<span className="wordmark-light">ARMAGEDDON</span></span>
         </a>
         <div className="topbar-center"><span className="status-dot" /> PERSONAL OPERATING ENVIRONMENT <span className="topbar-version">BUILD 0.3.0</span></div>
         <div className="topbar-right"><span className="connection"><i /> SYSTEM ONLINE</span><span className="topbar-clock">{clock}</span></div>
@@ -322,7 +322,7 @@ function App() {
       <section className="desktop" ref={desktopRef}>
         <div className="desktop-heading"><p className="eyebrow">WELCOME TO YOUR SPACE</p><h1>A world of <em>your own.</em></h1><p className="desktop-subtitle">Personal files. Favorite things. A few secrets in the system.</p></div>
         <div className="desktop-icons" aria-label="Desktop applications">
-          {apps.map((app) => <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)}><span className="desktop-icon-art">{app.icon}</span><span>{app.name}</span></button>)}
+          {apps.map((app) => <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)}><img className="desktop-icon-art" src={`./assets/icons/${app.icon}`} alt="" /><span>{app.name}</span></button>)}
         </div>
 
         <aside className="profile-widget">
@@ -390,7 +390,7 @@ function App() {
               ) : item.id === 'extras' ? (
                 <div className="feature-content window-content"><p className="eyebrow">EXTRAS / LITTLE SURPRISES</p><h2>A little something.</h2><p className="feature-description">Collect a kind word or leave a reaction. Small things count.</p><button className="feature-action" onClick={getCompliment}>♡ GIVE ME A COMPLIMENT</button>{currentCompliment && <div className="feature-result">{currentCompliment}</div>}<div className="reaction-row" aria-label="Leave a reaction">{['💜', '✨', '🖤', '🌙', '⭐'].map((emoji) => <button key={emoji} className={reaction === emoji ? 'reaction-selected' : ''} onClick={() => leaveReaction(emoji)} aria-label={`React with ${emoji}`}>{emoji}</button>)}</div>{reaction && <p className="reaction-confirmation">Reaction received: {reaction}</p>}</div>
               ) : (
-                <div className="window-content"><p className="eyebrow">{app.category} / APPLICATION</p><div className="window-heading-row"><span className="window-large-icon">{app.icon}</span><div><h2 id={`window-title-${item.id}`}>{app.name}</h2><p>{app.description}</p></div></div><div className="coming-soon"><span className="coming-line" /><span>APPLICATION MODULE IN DEVELOPMENT</span><span className="coming-line" /></div><p className="window-footnote">The original feature is on the preservation list. This space will be filled in as we build the system, one module at a time.</p></div>
+                <div className="window-content"><p className="eyebrow">{app.category} / APPLICATION</p><div className="window-heading-row"><span className="window-large-icon"><img src={`./assets/icons/${app.icon}`} alt="" /></span><div><h2 id={`window-title-${item.id}`}>{app.name}</h2><p>{app.description}</p></div></div><div className="coming-soon"><span className="coming-line" /><span>APPLICATION MODULE IN DEVELOPMENT</span><span className="coming-line" /></div><p className="window-footnote">The original feature is on the preservation list. This space will be filled in as we build the system, one module at a time.</p></div>
               )}
               <div className="window-status"><span>SUPERARMAGEDDON / USER SPACE</span><span>● READY</span></div>
             </section>
@@ -401,7 +401,7 @@ function App() {
       {launcherOpen && <div className="launcher-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setLauncherOpen(false); }}>
         <section className="launcher-panel" aria-label="Application launcher">
           <div className="launcher-header"><div><p className="eyebrow">SYSTEM DIRECTORY</p><h2>Applications</h2></div><button className="launcher-close" onClick={() => setLauncherOpen(false)} aria-label="Close launcher">×</button></div>
-          <div className="launcher-grid">{apps.map((app) => <button key={app.id} className="launcher-app" onClick={() => openApp(app.id)}><span>{app.icon}</span><strong>{app.name}</strong><small>{app.category}</small></button>)}</div>
+          <div className="launcher-grid">{apps.map((app) => <button key={app.id} className="launcher-app" onClick={() => openApp(app.id)}><img className="launcher-app-icon" src={`./assets/icons/${app.icon}`} alt="" /><strong>{app.name}</strong><small>{app.category}</small></button>)}</div>
           <div className="launcher-bottom"><span>9 APPLICATIONS</span><span>MORE MODULES INCOMING</span></div>
         </section>
       </div>}
@@ -409,13 +409,13 @@ function App() {
       {achievementToast && <div className="achievement-toast" role="status"><span className="toast-icon">✦</span><div><small>NEW ACHIEVEMENT UNLOCKED</small><strong>{achievementToast.title}</strong><span>{achievementToast.description}</span></div></div>}
 
       <footer className="taskbar">
-        <button className={`launcher-button ${launcherOpen ? 'is-open' : ''}`} onClick={() => setLauncherOpen((open) => !open)} aria-label="Open application launcher" aria-expanded={launcherOpen}><span className="launcher-glyph">S</span><span className="launcher-word">SYSTEM</span></button>
+        <button className={`launcher-button ${launcherOpen ? 'is-open' : ''}`} onClick={() => setLauncherOpen((open) => !open)} aria-label="Open application launcher" aria-expanded={launcherOpen}><img className="launcher-glyph" src="./assets/superarmageddon-mark.svg" alt="" /><span className="launcher-word">SYSTEM</span></button>
         <div className="taskbar-divider" />
-        <div className="taskbar-pins">{apps.slice(0, 5).map((app) => <button key={app.id} className="taskbar-pin" onClick={() => openApp(app.id)} title={app.name}>{app.icon}</button>)}</div>
+        <div className="taskbar-pins">{apps.slice(0, 5).map((app) => <button key={app.id} className="taskbar-pin" onClick={() => openApp(app.id)} title={app.name}><img src={`./assets/icons/${app.icon}`} alt="" /></button>)}</div>
         <div className="taskbar-spacer" />
         <div className="taskbar-windows">{windows.map((item) => {
           const app = apps.find((entry) => entry.id === item.id);
-          return app ? <button key={item.id} className={`taskbar-window ${item.minimized ? 'minimized' : 'running'}`} onClick={() => focusWindow(item.id)} title={app.name}><span>{app.icon}</span>{app.name}</button> : null;
+          return app ? <button key={item.id} className={`taskbar-window ${item.minimized ? 'minimized' : 'running'}`} onClick={() => focusWindow(item.id)} title={app.name}><img src={`./assets/icons/${app.icon}`} alt="" />{app.name}</button> : null;
         })}</div>
         <div className="taskbar-tray"><span className="tray-signal">◈</span><span className="tray-date">{date}</span><strong>{clock}</strong></div>
       </footer>
