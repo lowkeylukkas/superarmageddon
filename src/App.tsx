@@ -303,6 +303,7 @@ function App() {
   const unlockedCount = unlocked.size;
   const progress = Math.round((unlockedCount / achievements.length) * 100);
   const selected = achievements.find((item) => item.id === selectedAchievement) ?? achievements[0];
+  const activeWindowId = windows.filter((item) => !item.minimized).sort((a, b) => b.z - a.z)[0]?.id;
 
   return (
     <main className="os-shell">
@@ -411,12 +412,25 @@ function App() {
       <footer className="taskbar">
         <button className={`launcher-button ${launcherOpen ? 'is-open' : ''}`} onClick={() => setLauncherOpen((open) => !open)} aria-label="Open application launcher" aria-expanded={launcherOpen}><img className="launcher-glyph" src="./assets/superarmageddon-mark.svg" alt="" /><span className="launcher-word">SYSTEM</span></button>
         <div className="taskbar-divider" />
-        <div className="taskbar-pins">{apps.slice(0, 5).map((app) => <button key={app.id} className="taskbar-pin" onClick={() => openApp(app.id)} title={app.name}><img src={`./assets/icons/${app.icon}`} alt="" /></button>)}</div>
+        <div className="taskbar-open-apps" aria-label="Open applications">
+          {windows.length === 0 ? <span className="taskbar-empty">NO OPEN WINDOWS</span> : windows.map((item) => {
+            const app = apps.find((entry) => entry.id === item.id);
+            if (!app) return null;
+            const isActive = !item.minimized && item.id === activeWindowId;
+            return <button
+              key={item.id}
+              className={`taskbar-window ${item.minimized ? 'minimized' : isActive ? 'active' : 'running'}`}
+              onClick={() => focusWindow(item.id)}
+              title={`${app.name}${item.minimized ? ' — restore window' : isActive ? ' — active window' : ' — bring to front'}`}
+              aria-label={`${item.minimized ? 'Restore' : 'Focus'} ${app.name}`}
+              aria-pressed={isActive}
+            >
+              <img src={`./assets/icons/${app.icon}`} alt="" />
+              <span className="taskbar-window-name">{app.name}</span>
+            </button>;
+          })}
+        </div>
         <div className="taskbar-spacer" />
-        <div className="taskbar-windows">{windows.map((item) => {
-          const app = apps.find((entry) => entry.id === item.id);
-          return app ? <button key={item.id} className={`taskbar-window ${item.minimized ? 'minimized' : 'running'}`} onClick={() => focusWindow(item.id)} title={app.name}><img src={`./assets/icons/${app.icon}`} alt="" />{app.name}</button> : null;
-        })}</div>
         <div className="taskbar-tray"><span className="tray-signal">◈</span><span className="tray-date">{date}</span><strong>{clock}</strong></div>
       </footer>
 
