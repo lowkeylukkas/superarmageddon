@@ -5,19 +5,19 @@ type AppId = 'about' | 'achievements' | 'bible' | 'vibe' | 'music' | 'kpop' | 'g
 type AchievementId = 'avatar-tapper' | 'vibe-roller' | 'konami' | 'compliment-collector' | 'reaction-giver' | 'rainbow-finder' | 'games-explorer' | 'verse-reader';
 type DesktopApp = { id: AppId; name: string; icon: string; category: string; description: string };
 type AppWindow = { id: AppId; x: number; y: number; z: number; minimized: boolean; maximized: boolean };
-type DragState = { id: AppId; pointerX: number; pointerY: number; originX: number; originY: number };
+type DragState = { id: AppId; pointerX: number; pointerY: number; originX: number; originY: number; maxX: number; maxY: number };
 type Achievement = { id: AchievementId; title: string; description: string; hint: string; icon: string; category: string };
 
 const apps: DesktopApp[] = [
-  { id: 'about', name: 'About me', icon: '◈', category: 'PROFILE', description: 'A little window into the person behind this digital universe.' },
-  { id: 'achievements', name: 'Achievements', icon: '✧', category: 'SYSTEM', description: 'Discover milestones, hidden unlocks, and progress.' },
-  { id: 'bible', name: 'Daily verse', icon: '⌁', category: 'REFLECTIONS', description: 'A quiet corner for scripture and encouragement.' },
-  { id: 'vibe', name: 'Roll my vibe', icon: '⟡', category: 'RANDOMIZER', description: 'Let the system decide the vibe for today.' },
-  { id: 'music', name: 'Music player', icon: '♫', category: 'AUDIO', description: 'A home for favorite tracks and sounds.' },
-  { id: 'kpop', name: 'K-pop archive', icon: '✳', category: 'COLLECTION', description: 'Groups, artists, and eras worth keeping close.' },
-  { id: 'games', name: 'Games & characters', icon: '⌘', category: 'COLLECTION', description: 'Favorite worlds, games, and characters.' },
-  { id: 'socials', name: 'Social links', icon: '↗', category: 'CONNECTIONS', description: 'Find the places where I exist around the internet.' },
-  { id: 'extras', name: 'Little surprises', icon: '⁕', category: 'EXTRAS', description: 'Compliments, secrets, and other unexpected things.' },
+  { id: 'about', name: 'About me', icon: 'about-me.svg', category: 'PROFILE', description: 'A little window into the person behind this digital universe.' },
+  { id: 'achievements', name: 'Achievements', icon: 'achievements.svg', category: 'SYSTEM', description: 'Discover milestones, hidden unlocks, and progress.' },
+  { id: 'bible', name: 'Daily verse', icon: 'bible.svg', category: 'REFLECTIONS', description: 'A quiet corner for scripture and encouragement.' },
+  { id: 'vibe', name: 'Roll my vibe', icon: 'roll-my-vibe.svg', category: 'RANDOMIZER', description: 'Let the system decide the vibe for today.' },
+  { id: 'music', name: 'Music player', icon: 'music.svg', category: 'AUDIO', description: 'A home for favorite tracks and sounds.' },
+  { id: 'kpop', name: 'K-pop archive', icon: 'kpop.svg', category: 'COLLECTION', description: 'Groups, artists, and eras worth keeping close.' },
+  { id: 'games', name: 'Games & characters', icon: 'games.svg', category: 'COLLECTION', description: 'Favorite worlds, games, and characters.' },
+  { id: 'socials', name: 'Social links', icon: 'socials.svg', category: 'CONNECTIONS', description: 'Find the places where I exist around the internet.' },
+  { id: 'extras', name: 'Little surprises', icon: 'extras.svg', category: 'EXTRAS', description: 'Compliments, secrets, and other unexpected things.' },
 ];
 
 const achievements: Achievement[] = [
@@ -85,6 +85,7 @@ function App() {
   const [reaction, setReaction] = useState('');
   const [currentVerse, setCurrentVerse] = useState<{ ref: string; text: string } | null>(null);
   const topZ = useRef(10);
+  const desktopRef = useRef<HTMLElement | null>(null);
   const drag = useRef<DragState | null>(null);
   const unlockedRef = useRef(unlocked);
   const longPressTimer = useRef<number | null>(null);
@@ -124,7 +125,7 @@ function App() {
       const dx = event.clientX - current.pointerX;
       const dy = event.clientY - current.pointerY;
       setWindows((items) => items.map((item) => item.id === current.id && !item.maximized
-        ? { ...item, x: Math.max(8, Math.min(window.innerWidth - 260, current.originX + dx)), y: Math.max(62, Math.min(window.innerHeight - 150, current.originY + dy)) }
+        ? { ...item, x: Math.max(8, Math.min(current.maxX, current.originX + dx)), y: Math.max(8, Math.min(current.maxY, current.originY + dy)) }
         : item));
     };
     const stop = () => { drag.current = null; };
@@ -136,6 +137,37 @@ function App() {
       window.removeEventListener('pointerup', stop);
       window.removeEventListener('pointercancel', stop);
     };
+  }, []);
+
+  useEffect(() => {
+    const keepWindowsVisible = () => {
+      const desktop = desktopRef.current;
+      if (!desktop) return;
+      const bounds = desktop.getBoundingClientRect();
+
+      setWindows((items) => items.map((item) => {
+        if (item.maximized) return item;
+        const element = desktop.querySelector<HTMLElement>(`[data-window-id="${item.id}"]`);
+        const width = element?.offsetWidth ?? 620;
+        const height = element?.offsetHeight ?? 320;
+        return {
+          ...item,
+          x: Math.max(8, Math.min(Math.max(8, bounds.width - width - 8), item.x)),
+          y: Math.max(8, Math.min(Math.max(8, bounds.height - height - 8), item.y)),
+        };
+      }));
+    };
+
+    window.addEventListener('resize', keepWindowsVisible);
+    return () => window.removeEventListener('resize', keepWindowsVisible);
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLauncherOpen(false);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 
   useEffect(() => {
@@ -163,20 +195,41 @@ function App() {
   };
   const openApp = (id: AppId) => {
     if (id === 'games') grantAchievement('games-explorer');
+
+    const isMobile = window.matchMedia('(max-width: 760px)').matches;
+    const desktopBounds = desktopRef.current?.getBoundingClientRect();
+    const desktopWidth = desktopBounds?.width ?? window.innerWidth;
+    const desktopHeight = desktopBounds?.height ?? Math.max(300, window.innerHeight - 116);
+    const appWidth = Math.min(620, Math.max(280, desktopWidth - 24));
+    const estimatedHeight = id === 'achievements' ? 540 : id === 'extras' ? 360 : id === 'bible' ? 340 : id === 'vibe' ? 300 : 320;
+    const visibleWindows = windows.filter((item) => !item.minimized).length;
+    const offset = isMobile ? 0 : (visibleWindows % 5) * 30;
+    const x = Math.max(8, Math.min(Math.max(8, desktopWidth - appWidth - 8), (desktopWidth - appWidth) / 2 + offset));
+    const y = Math.max(8, Math.min(Math.max(8, desktopHeight - estimatedHeight - 8), (desktopHeight - estimatedHeight) / 2 + offset));
+
     const existing = windows.find((item) => item.id === id);
-    if (existing) focusWindow(id);
-    else {
-      topZ.current += 1;
-      const offset = (windows.length % 5) * 34;
-      setWindows((items) => [...items, {
-        id,
-        x: Math.max(28, (window.innerWidth - 620) / 2 + offset),
-        y: Math.max(78, (window.innerHeight - 390) / 2 + offset),
-        z: topZ.current,
-        minimized: false,
-        maximized: false,
-      }]);
+    topZ.current += 1;
+
+    if (existing) {
+      setWindows((items) => items.map((item) => ({
+        ...item,
+        minimized: item.id === id ? false : (isMobile ? true : item.minimized),
+        z: item.id === id ? topZ.current : item.z,
+      })));
+    } else {
+      setWindows((items) => [
+        ...items.map((item) => isMobile ? { ...item, minimized: true } : item),
+        {
+          id,
+          x,
+          y,
+          z: topZ.current,
+          minimized: false,
+          maximized: false,
+        },
+      ]);
     }
+
     setLauncherOpen(false);
     setMobileTab('home');
   };
@@ -188,8 +241,20 @@ function App() {
   };
   const startDrag = (event: ReactPointerEvent, item: AppWindow) => {
     if (event.button !== 0 || item.maximized || window.matchMedia('(max-width: 760px)').matches) return;
-    drag.current = { id: item.id, pointerX: event.clientX, pointerY: event.clientY, originX: item.x, originY: item.y };
-    focusWindow(item.id);
+
+    const desktopBounds = desktopRef.current?.getBoundingClientRect();
+    const windowElement = event.currentTarget.closest<HTMLElement>('.app-window');
+    if (!desktopBounds || !windowElement) return;
+
+    drag.current = {
+      id: item.id,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      originX: item.x,
+      originY: item.y,
+      maxX: Math.max(8, desktopBounds.width - windowElement.offsetWidth - 8),
+      maxY: Math.max(8, desktopBounds.height - windowElement.offsetHeight - 8),
+    };
   };
 
   const beginAvatarHold = () => {
@@ -248,16 +313,16 @@ function App() {
 
       <header className="topbar">
         <a className="wordmark" href="#" aria-label="Superarmageddon home" onClick={(event) => { event.preventDefault(); setWindows([]); setLauncherOpen(false); }}>
-          <span className="wordmark-mark">S</span><span>SUPER<span className="wordmark-light">ARMAGEDDON</span></span>
+          <img className="wordmark-mark-image" src="./assets/superarmageddon-mark.svg" alt="" /><span>SUPER<span className="wordmark-light">ARMAGEDDON</span></span>
         </a>
         <div className="topbar-center"><span className="status-dot" /> PERSONAL OPERATING ENVIRONMENT <span className="topbar-version">BUILD 0.3.0</span></div>
         <div className="topbar-right"><span className="connection"><i /> SYSTEM ONLINE</span><span className="topbar-clock">{clock}</span></div>
       </header>
 
-      <section className="desktop">
+      <section className="desktop" ref={desktopRef}>
         <div className="desktop-heading"><p className="eyebrow">WELCOME TO YOUR SPACE</p><h1>A world of <em>your own.</em></h1><p className="desktop-subtitle">Personal files. Favorite things. A few secrets in the system.</p></div>
         <div className="desktop-icons" aria-label="Desktop applications">
-          {apps.map((app) => <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)}><span className="desktop-icon-art">{app.icon}</span><span>{app.name}</span></button>)}
+          {apps.map((app) => <button className="desktop-icon" key={app.id} onClick={() => openApp(app.id)}><img className="desktop-icon-art" src={`./assets/icons/${app.icon}`} alt="" /><span>{app.name}</span></button>)}
         </div>
 
         <aside className="profile-widget">
@@ -278,7 +343,7 @@ function App() {
           const app = apps.find((entry) => entry.id === item.id);
           if (!app) return null;
           return (
-            <section key={item.id} className={`app-window ${item.maximized ? 'is-maximized' : ''}`} role="dialog" aria-labelledby={`window-title-${item.id}`} onPointerDown={() => focusWindow(item.id)} style={item.maximized ? { zIndex: item.z } : { left: item.x, top: item.y, zIndex: item.z }}>
+            <section key={item.id} className={`app-window ${item.maximized ? 'is-maximized' : ''}`} data-window-id={item.id} role="dialog" aria-labelledby={`window-title-${item.id}`} onPointerDown={() => focusWindow(item.id)} style={item.maximized ? { zIndex: item.z } : { left: item.x, top: item.y, zIndex: item.z }}>
               <div className="window-titlebar" onPointerDown={(event) => startDrag(event, item)} onDoubleClick={() => toggleMaximize(item.id)}>
                 <div className="window-controls">
                   <button className="control-close" aria-label={`Close ${app.name}`} onPointerDown={(event) => event.stopPropagation()} onClick={() => closeWindow(item.id)}>×</button>
@@ -325,7 +390,7 @@ function App() {
               ) : item.id === 'extras' ? (
                 <div className="feature-content window-content"><p className="eyebrow">EXTRAS / LITTLE SURPRISES</p><h2>A little something.</h2><p className="feature-description">Collect a kind word or leave a reaction. Small things count.</p><button className="feature-action" onClick={getCompliment}>♡ GIVE ME A COMPLIMENT</button>{currentCompliment && <div className="feature-result">{currentCompliment}</div>}<div className="reaction-row" aria-label="Leave a reaction">{['💜', '✨', '🖤', '🌙', '⭐'].map((emoji) => <button key={emoji} className={reaction === emoji ? 'reaction-selected' : ''} onClick={() => leaveReaction(emoji)} aria-label={`React with ${emoji}`}>{emoji}</button>)}</div>{reaction && <p className="reaction-confirmation">Reaction received: {reaction}</p>}</div>
               ) : (
-                <div className="window-content"><p className="eyebrow">{app.category} / APPLICATION</p><div className="window-heading-row"><span className="window-large-icon">{app.icon}</span><div><h2 id={`window-title-${item.id}`}>{app.name}</h2><p>{app.description}</p></div></div><div className="coming-soon"><span className="coming-line" /><span>APPLICATION MODULE IN DEVELOPMENT</span><span className="coming-line" /></div><p className="window-footnote">The original feature is on the preservation list. This space will be filled in as we build the system, one module at a time.</p></div>
+                <div className="window-content"><p className="eyebrow">{app.category} / APPLICATION</p><div className="window-heading-row"><span className="window-large-icon"><img src={`./assets/icons/${app.icon}`} alt="" /></span><div><h2 id={`window-title-${item.id}`}>{app.name}</h2><p>{app.description}</p></div></div><div className="coming-soon"><span className="coming-line" /><span>APPLICATION MODULE IN DEVELOPMENT</span><span className="coming-line" /></div><p className="window-footnote">The original feature is on the preservation list. This space will be filled in as we build the system, one module at a time.</p></div>
               )}
               <div className="window-status"><span>SUPERARMAGEDDON / USER SPACE</span><span>● READY</span></div>
             </section>
@@ -336,7 +401,7 @@ function App() {
       {launcherOpen && <div className="launcher-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setLauncherOpen(false); }}>
         <section className="launcher-panel" aria-label="Application launcher">
           <div className="launcher-header"><div><p className="eyebrow">SYSTEM DIRECTORY</p><h2>Applications</h2></div><button className="launcher-close" onClick={() => setLauncherOpen(false)} aria-label="Close launcher">×</button></div>
-          <div className="launcher-grid">{apps.map((app) => <button key={app.id} className="launcher-app" onClick={() => openApp(app.id)}><span>{app.icon}</span><strong>{app.name}</strong><small>{app.category}</small></button>)}</div>
+          <div className="launcher-grid">{apps.map((app) => <button key={app.id} className="launcher-app" onClick={() => openApp(app.id)}><img className="launcher-app-icon" src={`./assets/icons/${app.icon}`} alt="" /><strong>{app.name}</strong><small>{app.category}</small></button>)}</div>
           <div className="launcher-bottom"><span>9 APPLICATIONS</span><span>MORE MODULES INCOMING</span></div>
         </section>
       </div>}
@@ -344,13 +409,13 @@ function App() {
       {achievementToast && <div className="achievement-toast" role="status"><span className="toast-icon">✦</span><div><small>NEW ACHIEVEMENT UNLOCKED</small><strong>{achievementToast.title}</strong><span>{achievementToast.description}</span></div></div>}
 
       <footer className="taskbar">
-        <button className={`launcher-button ${launcherOpen ? 'is-open' : ''}`} onClick={() => setLauncherOpen((open) => !open)} aria-label="Open application launcher" aria-expanded={launcherOpen}><span className="launcher-glyph">S</span><span className="launcher-word">SYSTEM</span></button>
+        <button className={`launcher-button ${launcherOpen ? 'is-open' : ''}`} onClick={() => setLauncherOpen((open) => !open)} aria-label="Open application launcher" aria-expanded={launcherOpen}><img className="launcher-glyph" src="./assets/superarmageddon-mark.svg" alt="" /><span className="launcher-word">SYSTEM</span></button>
         <div className="taskbar-divider" />
-        <div className="taskbar-pins">{apps.slice(0, 5).map((app) => <button key={app.id} className="taskbar-pin" onClick={() => openApp(app.id)} title={app.name}>{app.icon}</button>)}</div>
+        <div className="taskbar-pins">{apps.slice(0, 5).map((app) => <button key={app.id} className="taskbar-pin" onClick={() => openApp(app.id)} title={app.name}><img src={`./assets/icons/${app.icon}`} alt="" /></button>)}</div>
         <div className="taskbar-spacer" />
         <div className="taskbar-windows">{windows.map((item) => {
           const app = apps.find((entry) => entry.id === item.id);
-          return app ? <button key={item.id} className={`taskbar-window ${item.minimized ? 'minimized' : 'running'}`} onClick={() => focusWindow(item.id)} title={app.name}><span>{app.icon}</span>{app.name}</button> : null;
+          return app ? <button key={item.id} className={`taskbar-window ${item.minimized ? 'minimized' : 'running'}`} onClick={() => focusWindow(item.id)} title={app.name}><img src={`./assets/icons/${app.icon}`} alt="" />{app.name}</button> : null;
         })}</div>
         <div className="taskbar-tray"><span className="tray-signal">◈</span><span className="tray-date">{date}</span><strong>{clock}</strong></div>
       </footer>
